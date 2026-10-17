@@ -157,10 +157,18 @@ class Monitor(QWidget):
             return
         pid = int(pid_item.text())
         menu = QMenu(self)
-        action = menu.addAction(f"Ignora PID {pid} (non terminare)")
+        is_ignored = identity(pid) in self.ignored
+        action = menu.addAction(
+            f"Ripristina PID {pid}" if is_ignored else f"Ignora PID {pid} (non terminare)"
+        )
         chosen = menu.exec(self.table.viewport().mapToGlobal(pos))
         if chosen == action:
-            self.ignore_pid(pid)
+            if is_ignored:
+                self.ignored.discard(identity(pid))
+                self.save_ignored()
+                self.refresh()
+            else:
+                self.ignore_pid(pid)
 
     def refresh(self):
         all_procs = scan_codex()
@@ -169,18 +177,26 @@ class Monitor(QWidget):
         if self.ignored - alive:
             self.ignored.intersection_update(alive)
             self.save_ignored()
-        procs = [p for p in all_procs if identity(p[0]) not in self.ignored]
-        n = len(procs)
-        self.status.setText((f"● Codex · {n} attiv{'o' if n == 1 else 'i'}" if n else "● Codex · tutto fermo") + (f"  · {len(self.ignored)} ignorati" if self.ignored else ""))
+        active = [p for p in all_procs if identity(p[0]) not in self.ignored]
+        ignored = [p for p in all_procs if identity(p[0]) in self.ignored]
+        n = len(active)
+        self.status.setText((f"● Codex · {n} attiv{'o' if n == 1 else 'i'}" if n else "● Codex · tutto fermo") + (f"  · {len(ignored)} ignorati" if ignored else ""))
         self.status.setStyleSheet(
             f"background: {'#9e3030' if n else '#1c7548'}; color: white;"
         )
         if self.expanded:
-            self.table.setRowCount(n)
+            procs = active + ignored
+            self.table.setRowCount(len(procs))
             for row, (pid, cwd, elapsed, cmd) in enumerate(procs):
-                for col, value in enumerate((str(pid), os.path.basename(cwd), elapsed_str(elapsed), cmd)):
+                is_ignored = row >= n
+                values = (str(pid), os.path.basename(cwd), elapsed_str(elapsed),
+                          ("[IGNORATO] " if is_ignored else "") + cmd)
+                for col, value in enumerate(values):
                     item = QTableWidgetItem(value)
                     item.setToolTip(cwd if col == 1 else cmd if col == 3 else value)
+                    if is_ignored:
+                        item.setBackground(Qt.GlobalColor.darkRed)
+                        item.setForeground(Qt.GlobalColor.white)
                     self.table.setItem(row, col, item)
 
 if __name__ == "__main__":
