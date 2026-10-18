@@ -83,13 +83,28 @@ export default class CodexMonitorExtension extends Extension {
             const prefix = proc.ignored ? '⛔' : '●';
             const min = Math.floor(proc.seconds / 60);
             const sec = String(proc.seconds % 60).padStart(2, '0');
-            const line = `${prefix} ${proc.project} · PID ${proc.pid} · ${min}:${sec}`;
+            const interactive = !proc.command.startsWith('exec ');
+            const mode = interactive ? 'Interattiva' : 'Exec';
+            const line = `${prefix} ${proc.project} · ${mode} · PID ${proc.pid} · ${min}:${sec}`;
             const item = new PopupMenu.PopupMenuItem(line);
             if (proc.ignored)
                 item.label.set_style('color: #ff7777;');
-            item.label.set_tooltip_text?.(proc.command);
             item.connect('activate', () => this._action(proc.ignored ? 'restore' : 'ignore', proc.identity));
             menu.addMenuItem(item);
+            let detail;
+            if (interactive) {
+                detail = proc.command.includes('read-only')
+                    ? '  Sessione interattiva · sola lettura · task non disponibile'
+                    : '  Sessione interattiva · task non disponibile';
+            } else {
+                const command = proc.command;
+                const spec = command.match(/SPEC[^.]{0,65}/i);
+                detail = spec ? spec[0].trim() : command.replace(/^exec(?: -[^ ]+ [^ ]+)*\\s*/, '');
+                detail = '  ' + (detail.length > 85 ? detail.slice(0, 82) + '…' : detail);
+            }
+            const subtitle = new PopupMenu.PopupMenuItem(detail, {reactive: false});
+            subtitle.label.set_style(proc.ignored ? 'color: #ff9999; font-size: 10px;' : 'color: #aaaaaa; font-size: 10px;');
+            menu.addMenuItem(subtitle);
         }
         if (ignored.length) {
             menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
