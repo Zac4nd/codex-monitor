@@ -39,7 +39,7 @@ def scan_codex():
                 continue
             # Node wrapper/desktop binaries excluded by executable basename above.
             # CLI 'exec' is the reliable unit-of-work signal; interactive bare 'codex' too.
-            if not ("exec" in args[1:] or "resume" in args[1:] or len(args) == 1):
+            if not ("exec" in args[1:] or "resume" in args[1:] or len(args) == 1 or (len(args) > 1 and args[1].startswith("-"))):
                 continue
             pid = int(proc.name)
             cwd = os.readlink(proc / "cwd")

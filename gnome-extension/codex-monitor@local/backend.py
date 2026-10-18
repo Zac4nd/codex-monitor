@@ -36,7 +36,7 @@ def scan():
                 continue
             if any(a in ("app-server", "exec-server", "mcp-server", "code-mode-host") for a in args[1:]):
                 continue
-            if not ("exec" in args[1:] or "resume" in args[1:] or len(args) == 1):
+            if not ("exec" in args[1:] or "resume" in args[1:] or len(args) == 1 or (len(args) > 1 and args[1].startswith("-"))):
                 continue
             pid = int(path.name)
             key = identity(pid)
