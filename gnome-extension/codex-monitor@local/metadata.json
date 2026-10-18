@@ -1,0 +1,9 @@
+{
+  "uuid": "codex-monitor@local",
+  "name": "Codex Monitor",
+  "description": "Track local Codex CLI executions in GNOME Shell top bar",
+  "shell_version": [
+    "48"
+  ],
+  "version": 1
+}
