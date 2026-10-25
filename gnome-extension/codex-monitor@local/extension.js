@@ -72,6 +72,17 @@ export default class CodexMonitorExtension extends Extension {
         this._label.set_style(`color: ${count ? '#ff7777' : '#6ee5a2'};`);
         const menu = this._indicator.menu;
         menu.removeAll();
+        const settings = new PopupMenu.PopupMenuItem('⚙ Configura notifiche ntfy…');
+        settings.connect('activate', () => {
+            try {
+                const script = GLib.build_filenamev([this.path, 'ntfy_settings.py']);
+                Gio.Subprocess.new(['/usr/bin/python3', script, 'gui'], Gio.SubprocessFlags.NONE);
+            } catch (e) {
+                logError(e, 'Codex Monitor settings');
+            }
+        });
+        menu.addMenuItem(settings);
+        menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
         const title = new PopupMenu.PopupMenuItem(
             `${count} attivi · ${ignored.length} ignorati`, {reactive: false});
         menu.addMenuItem(title);

@@ -86,6 +86,10 @@ class Monitor(QWidget):
         self.status = QLabel("● Codex · verifica...")
         self.status.setObjectName("status")
         bar.addWidget(self.status, 1)
+        self.settings_btn = QPushButton("⚙")
+        self.settings_btn.setFixedWidth(32)
+        self.settings_btn.clicked.connect(self.open_settings)
+        bar.addWidget(self.settings_btn)
         self.toggle = QPushButton("▾")
         self.toggle.setFixedWidth(32)
         self.toggle.clicked.connect(self.toggle_details)
@@ -116,6 +120,10 @@ class Monitor(QWidget):
         self.timer.timeout.connect(self.refresh)
         self.timer.start(1500)
         self.refresh()
+
+    def open_settings(self):
+        import subprocess
+        subprocess.Popen([sys.executable, str(Path(__file__).resolve().with_name("ntfy_settings.py")), "gui"])
 
     def toggle_details(self):
         self.expanded = not self.expanded
