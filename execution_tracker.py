@@ -86,8 +86,8 @@ if __name__ == "__main__":
     if args.once:
         print(json.dumps(tick(), ensure_ascii=False))
     else:
-        from notification_worker import drain
+        from session_notifier import poll
         while True:
             tick()
-            drain(EVENTS, DATA / 'notification-cursor.txt')
+            poll(Path.home() / '.codex/sessions', DATA / 'session-notification-offsets.json')
             time.sleep(max(0.5, args.interval))

@@ -8,7 +8,7 @@ def prepare(event, config):
     if event.get("event") != "finished":
         return None
     state = event.get("outcome", "unknown")
-    title = {"completed": "Codex completato", "failed": "Codex errore",
+    title = {"completed": "Codex: turno completato", "failed": "Codex: turno interrotto/errore",
              "unknown": "Codex terminato (esito sconosciuto)"}.get(state)
     if not title:
         return None

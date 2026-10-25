@@ -49,8 +49,16 @@ run independently as an enabled `systemd --user` service on Debian. Notification
   `error` messages from a **specifically associated** Codex JSON event stream.
   An observed process disappearing remains `unknown` until a trustworthy
   source establishes its outcome. No automatic log-to-PID correlation yet.
-- `ntfy_notifier.py` contains a prepared opt-in HTTPS transport targeting
-  `https://ntfy.sh`. The tracker sends an opt-in notification when a previously observed, non-ignored process terminates. Until a verified per-process event stream is available, the reported outcome is `unknown`. `notification_worker.py` records a persistent event-log cursor before each attempt (at-most-once; network failures can lose an alert). Past events are skipped on first enablement.
+- `ntfy_notifier.py` sends opt-in HTTPS notifications to `https://ntfy.sh`.
+  The live tracker now uses `session_notifier.py` to read **Codex session JSONL**
+  directly, keyed by session file and byte offset, with no speculative PID mapping.
+  Explicit `task_complete` means **turn completed**, not guaranteed task/test success;
+  explicit `turn_aborted` or `task_failed` means interrupted/failed if present.
+  Events without a supported terminal marker produce no success/failure claim.
+  Existing logs are skipped on initial activation; offsets are recorded before
+  sending (at-most-once, with possible lost alerts on network failure).
+  The passive process event log is still maintained but no longer sends
+  duplicate unknown-outcome notifications.
 - `python3 ntfy_settings.py gui` opens the shared notification settings window;
   the GNOME menu and PyQt widget also provide access. CLI commands:
   `python3 ntfy_settings.py show`, `set --topic TOPIC`, `enable`, `disable`, `test`.
