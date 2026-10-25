@@ -50,8 +50,12 @@ run independently as an enabled `systemd --user` service on Debian; no network n
   An observed process disappearing remains `unknown` until a trustworthy
   source establishes its outcome. No automatic log-to-PID correlation yet.
 - `ntfy_notifier.py` contains a prepared opt-in HTTPS transport targeting
-  `https://ntfy.sh`. Its configuration has `enabled: false` by default.
-  Neither the tracker nor the widget calls the transport yet.
+  `https://ntfy.sh`. The tracker still does not send notifications automatically.
+- `python3 ntfy_settings.py gui` opens the shared notification settings window;
+  the GNOME menu and PyQt widget also provide access. CLI commands:
+  `python3 ntfy_settings.py show`, `set --topic TOPIC`, `enable`, `disable`, `test`.
+  `test` deliberately sends one HTTP notification regardless of the saved enabled flag.
+  Settings are stored in `~/.config/codex-monitor/ntfy.json` (mode 0600).
 - `python3 -m unittest -v test_monitor_events` runs the local synthetic tests.
 - `systemctl --user status codex-monitor-tracker.service` checks the service;
   `systemctl --user stop codex-monitor-tracker.service` stops it without stopping Codex.
