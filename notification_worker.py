@@ -35,7 +35,7 @@ def drain(events_path, cursor_path, sender=publish, config=None):
             event = json.loads(line)
             # Commit cursor before sending: at-most-once attempt, not exactly-once delivery.
             cursor_path.write_text(str(stream.tell()))
-            if event.get("event") != "finished" or event.get("ignored"):
+            if event.get("event") != "finished" or event.get("ignored") or event.get("managed"):
                 continue
             try:
                 result = sender(event, config)

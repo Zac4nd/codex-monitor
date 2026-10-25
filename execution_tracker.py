@@ -54,12 +54,13 @@ def observe(snapshot=None, now=None, previous=None):
             events.append({"event": "started", "identity": key, "pid": p["pid"], "project": p["project"], "at": now})
         next_state[key] = {"pid": p["pid"], "project": p["project"], "command": p["command"],
                            "first_seen": old.get("first_seen", now) if old else now,
-                           "last_seen": now, "ignored": p.get("ignored", False)}
+                           "last_seen": now, "ignored": p.get("ignored", False),
+                           "managed": p.get("managed", False)}
     for key, p in previous.items():
         if key not in current:
             events.append({"event": "finished", "outcome": "unknown", "identity": key,
                            "pid": p["pid"], "project": p["project"], "at": now,
-                           "ignored": p.get("ignored", False)})
+                           "ignored": p.get("ignored", False), "managed": p.get("managed", False)})
     return next_state, events
 
 def tick():

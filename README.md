@@ -65,6 +65,23 @@ transitions. A process disappearing between polls may be missed if it was never
 observed. The classifier does not equate a Codex turn completing with all tests
 passing. Waiting for approval or detecting stalled work is not implemented yet.
 
+## Verified outcomes for `codex exec`
+
+The passive process monitor cannot obtain the exit code of unrelated processes.
+To get a **verified successful/failed** Android alert, run a task through the
+optional launcher instead of calling `codex exec` directly:
+
+```bash
+python3 codex_monitor_exec.py exec -s read-only 'Your task here'
+```
+
+The launcher preserves Codex's exit code, delivers one ntfy alert if enabled,
+and marks its child as managed so the passive tracker does not send a duplicate
+`unknown` alert. Regular Codex sessions continue to be monitored as before;
+their outcome remains `unknown`. This reports the CLI exit status, not whether
+all application tests or requirements passed. It does not modify source files
+or add third-party dependencies.
+
 ## Limitations
 
 Process-based detection cannot determine actual task progress or success. Codex app-server sessions are not counted.

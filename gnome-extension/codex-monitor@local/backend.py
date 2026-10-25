@@ -45,8 +45,9 @@ def scan():
             stat = (path / "stat").read_text().rsplit(")", 1)[1].split()
             uptime = float(Path("/proc/uptime").read_text().split()[0])
             elapsed = max(0, int(uptime - int(stat[19]) / os.sysconf("SC_CLK_TCK")))
+            managed = b"CODEX_MONITOR_WRAPPED=1" in (path / "environ").read_bytes().split(bytes([0]))
             result.append(dict(pid=pid, identity=key, project=os.path.basename(os.readlink(path / "cwd")),
-                               seconds=elapsed, command=" ".join(args[1:]) or "interactive"))
+                               seconds=elapsed, command=" ".join(args[1:]) or "interactive", managed=managed))
         except (OSError, ValueError, IndexError):
             continue
     return sorted(result, key=lambda p: p["pid"])
