@@ -39,7 +39,9 @@ def collect(root, positions):
                     continue
                 payload = record.get("payload", {})
                 kind = payload.get("type")
-                if kind == "task_complete":
+                if kind == "task_started":
+                    events.append({"event": "started", "project": project, "session": path.stem})
+                elif kind == "task_complete":
                     events.append({"event": "finished", "outcome": "completed", "project": project, "session": path.stem})
                 elif kind in ("turn_aborted", "task_failed"):
                     events.append({"event": "finished", "outcome": "failed", "project": project, "session": path.stem})

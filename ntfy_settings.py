@@ -9,7 +9,7 @@ from urllib.parse import urlsplit
 from ntfy_notifier import publish
 
 PATH = Path.home() / ".config/codex-monitor/ntfy.json"
-DEFAULT = {"enabled": False, "url": "https://ntfy.sh", "topic": ""}
+DEFAULT = {"enabled": False, "url": "https://ntfy.sh", "topic": "", "notify_start": True, "notify_complete": True, "notify_error": True}
 TOPIC = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
 
 def read():
@@ -31,7 +31,7 @@ def save(data):
         raise ValueError("Topic required before enabling notifications")
     PATH.parent.mkdir(parents=True, exist_ok=True)
     temp = PATH.with_suffix(".tmp")
-    temp.write_text(json.dumps({"enabled": bool(data["enabled"]), "url": url, "topic": topic}, indent=2) + "\n")
+    temp.write_text(json.dumps({"enabled": bool(data["enabled"]), "url": url, "topic": topic, **{k: bool(data.get(k, True)) for k in ("notify_start", "notify_complete", "notify_error")}}, indent=2) + "\n")
     os.chmod(temp, 0o600)
     os.replace(temp, PATH)
 
@@ -50,9 +50,15 @@ def gui():
     form.addRow("Server HTTPS:", url)
     form.addRow("Topic:", topic)
     form.addRow("", enabled)
+    alerts = {}
+    for key, label in (("notify_start", "Avvio del turno"), ("notify_complete", "Completamento"), ("notify_error", "Errore / interruzione")):
+        item = QCheckBox(label)
+        item.setChecked(state.get(key, True))
+        alerts[key] = item
+        form.addRow("", item)
     root.addLayout(form)
     def values():
-        return {"url": url.text().strip(), "topic": topic.text().strip(), "enabled": enabled.isChecked()}
+        return {"url": url.text().strip(), "topic": topic.text().strip(), "enabled": enabled.isChecked(), **{key: box.isChecked() for key, box in alerts.items()}}
     def store():
         try:
             save(values())
@@ -74,7 +80,7 @@ def gui():
     test_button.clicked.connect(test)
     root.addWidget(save_button)
     root.addWidget(test_button)
-    window.resize(450, 180)
+    window.resize(450, 270)
     window.show()
     return app.exec()
 
@@ -85,6 +91,8 @@ def main():
     edit = subs.add_parser("set")
     edit.add_argument("--topic")
     edit.add_argument("--url")
+    for key in ("notify_start", "notify_complete", "notify_error"):
+        edit.add_argument("--" + key.replace("_", "-"), choices=("on", "off"))
     toggle = subs.add_parser("enable")
     subs.add_parser("disable")
     subs.add_parser("test")
@@ -98,6 +106,9 @@ def main():
         data = read()
         if args.topic is not None: data["topic"] = args.topic
         if args.url is not None: data["url"] = args.url
+        for key in ("notify_start", "notify_complete", "notify_error"):
+            value = getattr(args, key)
+            if value is not None: data[key] = value == "on"
         save(data)
         print("Saved")
     elif args.action in ("enable", "disable"):

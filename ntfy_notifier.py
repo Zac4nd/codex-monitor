@@ -5,6 +5,8 @@ from urllib.request import Request, urlopen
 
 def prepare(event, config):
     """Create only minimal, non-sensitive notification data."""
+    if event.get("event") == "started":
+        return {"title": "Codex: turno avviato", "body": str(event.get("project", "Progetto"))[:60], "priority": "3"}
     if event.get("event") != "finished":
         return None
     state = event.get("outcome", "unknown")

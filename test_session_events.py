@@ -21,9 +21,10 @@ class SessionLogTests(unittest.TestCase):
               {"type":"event_msg","payload":{"type":"task_started"}},
               {"type":"event_msg","payload":{"type":"task_complete"}}]
             path.write_text("".join(json.dumps(item)+"\n" for item in lines))
-            self.assertEqual(poll(root,state,sender,cfg),1)
-            self.assertEqual(sent[0]["outcome"],"completed")
-            self.assertEqual(sent[0]["project"],"demo")
+            self.assertEqual(poll(root,state,sender,cfg),2)
+            self.assertEqual(sent[0]["event"],"started")
+            self.assertEqual(sent[1]["outcome"],"completed")
+            self.assertEqual(sent[1]["project"],"demo")
             self.assertEqual(poll(root,state,sender,cfg),0)
     def test_existing_sessions_not_replayed(self):
         with tempfile.TemporaryDirectory() as td:

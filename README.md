@@ -52,6 +52,7 @@ run independently as an enabled `systemd --user` service on Debian. Notification
 - `ntfy_notifier.py` sends opt-in HTTPS notifications to `https://ntfy.sh`.
   The live tracker now uses `session_notifier.py` to read **Codex session JSONL**
   directly, keyed by session file and byte offset, with no speculative PID mapping.
+  Explicit `task_started` means **turn started** (also within an existing CLI session).
   Explicit `task_complete` means **turn completed**, not guaranteed task/test success;
   explicit `turn_aborted` or `task_failed` means interrupted/failed if present.
   Events without a supported terminal marker produce no success/failure claim.
@@ -62,6 +63,10 @@ run independently as an enabled `systemd --user` service on Debian. Notification
 - `python3 ntfy_settings.py gui` opens the shared notification settings window;
   the GNOME menu and PyQt widget also provide access. CLI commands:
   `python3 ntfy_settings.py show`, `set --topic TOPIC`, `enable`, `disable`, `test`.
+  The GUI offers three independent checkboxes for turn start, completion and
+  error/interruption, all enabled by default; CLI equivalents are
+  `set --notify-start on|off --notify-complete on|off --notify-error on|off`.
+  Preferences are read on each polling cycle without a service restart.
   `test` deliberately sends one HTTP notification regardless of the saved enabled flag.
   Settings are stored in `~/.config/codex-monitor/ntfy.json` (mode 0600).
 - `python3 -m unittest -v test_monitor_events` runs the local synthetic tests.
