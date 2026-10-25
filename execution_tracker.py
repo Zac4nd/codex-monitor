@@ -18,7 +18,11 @@ def backend_scan():
     spec = importlib.util.spec_from_file_location("codex_monitor_backend", target)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
-    return mod.scan()
+    ignored = mod.ignored_ids()
+    processes = mod.scan()
+    for process in processes:
+        process['ignored'] = process['identity'] in ignored
+    return processes
 
 def atomic_write(path, payload):
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -54,7 +58,8 @@ def observe(snapshot=None, now=None, previous=None):
     for key, p in previous.items():
         if key not in current:
             events.append({"event": "finished", "outcome": "unknown", "identity": key,
-                           "pid": p["pid"], "project": p["project"], "at": now})
+                           "pid": p["pid"], "project": p["project"], "at": now,
+                           "ignored": p.get("ignored", False)})
     return next_state, events
 
 def tick():
@@ -80,6 +85,8 @@ if __name__ == "__main__":
     if args.once:
         print(json.dumps(tick(), ensure_ascii=False))
     else:
+        from notification_worker import drain
         while True:
             tick()
+            drain(EVENTS, DATA / 'notification-cursor.txt')
             time.sleep(max(0.5, args.interval))
