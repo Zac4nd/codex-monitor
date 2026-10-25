@@ -36,6 +36,29 @@ Click `● Codex 0` in the top-right panel to see the process list; click an act
 
 The extension uses a Python 3 `/proc` backend and requires no PyQt package. GNOME Shell 48 is the tested target version for installation and syntax; interactive GNOME activation still needs to be verified after login.
 
+## Execution tracking and notifications (experimental)
+
+The GNOME indicator and PyQt widget are unchanged. The new tracking components
+are **not running as a service yet** and no network notifications are enabled.
+
+- `execution_tracker.py` observes local CLI processes and stores state under
+  `~/.local/share/codex-monitor/executions.json`, with events appended to `events.jsonl`.
+  Use `python3 execution_tracker.py --once` for a single local observation, or run
+  it as a foreground loop for development.
+- `event_classifier.py` recognizes explicit `turn.completed`, `turn.failed` and
+  `error` messages from a **specifically associated** Codex JSON event stream.
+  An observed process disappearing remains `unknown` until a trustworthy
+  source establishes its outcome. No automatic log-to-PID correlation yet.
+- `ntfy_notifier.py` contains a prepared opt-in HTTPS transport targeting
+  `https://ntfy.sh`. Its configuration has `enabled: false` by default.
+  Neither the tracker nor the widget calls the transport yet.
+- `python3 -m unittest -v test_monitor_events` runs the local synthetic tests.
+
+**Limitations:** The tracker must be running continuously to notice process
+transitions. A process disappearing between polls may be missed if it was never
+observed. The classifier does not equate a Codex turn completing with all tests
+passing. Waiting for approval or detecting stalled work is not implemented yet.
+
 ## Limitations
 
 Process-based detection cannot determine actual task progress or success. Codex app-server sessions are not counted.
