@@ -39,7 +39,7 @@ The extension uses a Python 3 `/proc` backend and requires no PyQt package. GNOM
 ## Execution tracking and notifications (experimental)
 
 The GNOME indicator and PyQt widget are unchanged. The new tracking components
-run independently as an enabled `systemd --user` service on Debian; no network notifications are enabled.
+run independently as an enabled `systemd --user` service on Debian. Notifications are opt-in through shared ntfy settings.
 
 - `execution_tracker.py` observes local CLI processes and stores state under
   `~/.local/share/codex-monitor/executions.json`, with events appended to `events.jsonl`.
@@ -50,7 +50,7 @@ run independently as an enabled `systemd --user` service on Debian; no network n
   An observed process disappearing remains `unknown` until a trustworthy
   source establishes its outcome. No automatic log-to-PID correlation yet.
 - `ntfy_notifier.py` contains a prepared opt-in HTTPS transport targeting
-  `https://ntfy.sh`. The tracker still does not send notifications automatically.
+  `https://ntfy.sh`. The tracker sends an opt-in notification when a previously observed, non-ignored process terminates. Until a verified per-process event stream is available, the reported outcome is `unknown`. `notification_worker.py` records a persistent event-log cursor before each attempt (at-most-once; network failures can lose an alert). Past events are skipped on first enablement.
 - `python3 ntfy_settings.py gui` opens the shared notification settings window;
   the GNOME menu and PyQt widget also provide access. CLI commands:
   `python3 ntfy_settings.py show`, `set --topic TOPIC`, `enable`, `disable`, `test`.
