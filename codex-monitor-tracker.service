@@ -1,0 +1,13 @@
+[Unit]
+Description=Codex Monitor process lifecycle tracker
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 %h/Documents/ProgettiSE/codex-monitor/execution_tracker.py --interval 2
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+
+[Install]
+WantedBy=default.target
