@@ -34,7 +34,7 @@ gnome-extensions enable codex-monitor@local
 
 Click `● Codex 0` in the top-right panel to see the process list; click an active process to ignore it, or an ignored process to restore it. Ignored executions are shown in red at the bottom and do not affect the active count. The extension and the PyQt widget share the same ignored-process JSON file. You can disable it using `gnome-extensions disable codex-monitor@local`.
 
-The extension uses a Python 3 `/proc` backend and requires no PyQt package. GNOME Shell 48 is the tested target version for installation and syntax; interactive GNOME activation still needs to be verified after login.
+The extension uses a Python 3 `/proc` backend and requires no PyQt package. On GNOME Shell 48 **Wayland**, updating `extension.js` requires a logout/login to load fresh JavaScript; disabling/re-enabling the extension does not clear the module cache. Finish active Codex work before logging out, since a logout can terminate user processes. The backend can be updated independently and is live immediately; verify the three-line menu after a new login.
 
 ## Execution tracking and notifications (experimental)
 
