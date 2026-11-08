@@ -16,7 +16,11 @@ def poll(root, state_file, sender=publish, config=None):
         state_file.write_text(json.dumps(offsets))
         return 0
     positions = json.loads(state_file.read_text())
-    positions, events = collect(root, positions)
+    try:
+        labels = json.loads((state_file.parent / 'session-labels.json').read_text())
+    except (OSError, ValueError):
+        labels = {}
+    positions, events = collect(root, positions, labels)
     # Commit offsets before delivering to guarantee at-most-once attempts.
     state_file.write_text(json.dumps(positions))
     count = 0

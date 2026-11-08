@@ -2,11 +2,15 @@
 import json
 import os
 from urllib.request import Request, urlopen
+from activity_metadata import clean_label
 
 def prepare(event, config):
     """Create only minimal, non-sensitive notification data."""
     if event.get("event") == "started":
-        return {"title": "Codex: turno avviato", "body": str(event.get("project", "Progetto"))[:60], "priority": "3"}
+        project = clean_label(event.get("project", "")) or "Progetto"
+        activity = clean_label(event.get("activity", ""))
+        return {"title": "Codex: turno avviato",
+                "body": project + (" · " + activity if activity else ""), "priority": "3"}
     if event.get("event") != "finished":
         return None
     state = event.get("outcome", "unknown")
@@ -14,8 +18,10 @@ def prepare(event, config):
              "unknown": "Codex terminato (esito sconosciuto)"}.get(state)
     if not title:
         return None
-    project = str(event.get("project", "Progetto"))[:60]
-    return {"title": title, "body": project, "priority": "4" if state == "failed" else "3"}
+    project = clean_label(event.get("project", "")) or "Progetto"
+    activity = clean_label(event.get("activity", ""))
+    body = project + (" · " + activity if activity else "")
+    return {"title": title, "body": body, "priority": "4" if state == "failed" else "3"}
 
 def publish(event, config):
     """Never send anything unless explicitly enabled by local config."""

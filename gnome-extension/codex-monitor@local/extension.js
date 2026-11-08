@@ -92,30 +92,26 @@ export default class CodexMonitorExtension extends Extension {
         }
         for (const proc of [...active, ...ignored]) {
             const prefix = proc.ignored ? '⛔' : '●';
-            const min = Math.floor(proc.seconds / 60);
-            const sec = String(proc.seconds % 60).padStart(2, '0');
-            const interactive = !proc.command.startsWith('exec ');
-            const mode = interactive ? 'Interattiva' : 'Exec';
-            const line = `${prefix} ${proc.project} · ${mode} · PID ${proc.pid} · ${min}:${sec}`;
-            const item = new PopupMenu.PopupMenuItem(line);
-            if (proc.ignored)
-                item.label.set_style('color: #ff7777;');
+            const hours = Math.floor(proc.seconds / 3600);
+            const minutes = String(Math.floor(proc.seconds / 60) % 60).padStart(2, '0');
+            const seconds = String(proc.seconds % 60).padStart(2, '0');
+            const duration = hours ? `${hours}:${minutes}:${seconds}` : `${minutes}:${seconds}`;
+            const mode = proc.command.startsWith('exec ') ? 'Exec' : 'Interattiva';
+            const item = new PopupMenu.PopupMenuItem('');
+            item.label.hide();
+            const lines = new St.BoxLayout({vertical: true, x_expand: true});
+            const project = new St.Label({text: `${prefix} ${proc.project}`, x_expand: true});
+            project.set_style(proc.ignored ? 'font-weight: 600; color: #ff7777;' : 'font-weight: 600;');
+            const activity = new St.Label({text: proc.activity || 'Attività non identificata', x_expand: true});
+            activity.set_style(proc.ignored ? 'font-size: 11px; color: #ff9999;' : 'font-size: 11px;');
+            const meta = new St.Label({text: `${mode} · ${duration} · PID ${proc.pid}`, x_expand: true});
+            meta.set_style('font-size: 10px; opacity: 0.72;');
+            lines.add_child(project);
+            lines.add_child(activity);
+            lines.add_child(meta);
+            item.add_child(lines);
             item.connect('activate', () => this._action(proc.ignored ? 'restore' : 'ignore', proc.identity));
             menu.addMenuItem(item);
-            let detail;
-            if (interactive) {
-                detail = proc.command.includes('read-only')
-                    ? '  Sessione interattiva · sola lettura · task non disponibile'
-                    : '  Sessione interattiva · task non disponibile';
-            } else {
-                const command = proc.command;
-                const spec = command.match(/SPEC[^.]{0,65}/i);
-                detail = spec ? spec[0].trim() : command.replace(/^exec(?: -[^ ]+ [^ ]+)*\\s*/, '');
-                detail = '  ' + (detail.length > 85 ? detail.slice(0, 82) + '…' : detail);
-            }
-            const subtitle = new PopupMenu.PopupMenuItem(detail, {reactive: false});
-            subtitle.label.set_style(proc.ignored ? 'color: #ff9999; font-size: 10px;' : 'color: #aaaaaa; font-size: 10px;');
-            menu.addMenuItem(subtitle);
         }
         if (ignored.length) {
             menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());

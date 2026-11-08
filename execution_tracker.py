@@ -12,6 +12,7 @@ HERE = Path(__file__).resolve().parent
 DATA = Path(os.environ.get("CODEX_MONITOR_DATA_DIR", Path.home() / ".local/share/codex-monitor"))
 STATE = DATA / "executions.json"
 EVENTS = DATA / "events.jsonl"
+SESSION_LABELS = DATA / "session-labels.json"
 
 def backend_scan():
     target = HERE / "gnome-extension/codex-monitor@local/backend.py"
@@ -63,12 +64,33 @@ def observe(snapshot=None, now=None, previous=None):
                            "ignored": p.get("ignored", False), "managed": p.get("managed", False)})
     return next_state, events
 
+def record_session_labels(snapshot):
+    """Keep explicit labels bound to a unique opened session file, not to project/PID."""
+    try:
+        labels = json.loads(SESSION_LABELS.read_text())
+        if not isinstance(labels, dict):
+            labels = {}
+    except (OSError, ValueError):
+        labels = {}
+    updated = False
+    for proc in snapshot:
+        session = proc.get("session_file")
+        if session and proc.get("activity_source") == "explicit" and proc.get("activity"):
+            if labels.get(session) != proc["activity"]:
+                labels[session] = proc["activity"]
+                updated = True
+    if updated:
+        atomic_write(SESSION_LABELS, labels)
+        os.chmod(SESSION_LABELS, 0o600)
+
 def tick():
     DATA.mkdir(parents=True, exist_ok=True)
     import fcntl
     with (DATA / "tracker.lock").open("a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
-        state, events = observe(previous=load_state())
+        snapshot = backend_scan()
+        state, events = observe(snapshot=snapshot, previous=load_state())
+        record_session_labels(snapshot)
         # Persist events before snapshot: duplicates are possible after a crash, but no guessed outcomes.
         with EVENTS.open("a") as stream:
             for event in events:

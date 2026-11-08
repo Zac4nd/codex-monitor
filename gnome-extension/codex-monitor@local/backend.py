@@ -4,6 +4,9 @@ import json
 import os
 import sys
 from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # development checkout
+from activity_metadata import resolve_process
 
 STORE = Path.home() / ".local/share/codex-monitor/ignored.json"
 
@@ -46,8 +49,12 @@ def scan():
             uptime = float(Path("/proc/uptime").read_text().split()[0])
             elapsed = max(0, int(uptime - int(stat[19]) / os.sysconf("SC_CLK_TCK")))
             managed = b"CODEX_MONITOR_WRAPPED=1" in (path / "environ").read_bytes().split(bytes([0]))
+            metadata = resolve_process(pid)
+            if identity(pid) != key:
+                continue  # PID reused during metadata inspection
             result.append(dict(pid=pid, identity=key, project=os.path.basename(os.readlink(path / "cwd")),
-                               seconds=elapsed, command=" ".join(args[1:]) or "interactive", managed=managed))
+                               seconds=elapsed, command=" ".join(args[1:]) or "interactive", managed=managed,
+                               **metadata))
         except (OSError, ValueError, IndexError):
             continue
     return sorted(result, key=lambda p: p["pid"])

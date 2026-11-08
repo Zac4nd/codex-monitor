@@ -38,7 +38,7 @@ The extension uses a Python 3 `/proc` backend and requires no PyQt package. GNOM
 
 ## Execution tracking and notifications (experimental)
 
-The GNOME indicator and PyQt widget are unchanged. The new tracking components
+The GNOME indicator displays compact per-process activity details; the PyQt widget remains unchanged. The tracking components
 run independently as an enabled `systemd --user` service on Debian. Notifications are opt-in through shared ntfy settings.
 
 - `execution_tracker.py` observes local CLI processes and stores state under
@@ -69,7 +69,7 @@ run independently as an enabled `systemd --user` service on Debian. Notification
   Preferences are read on each polling cycle without a service restart.
   `test` deliberately sends one HTTP notification regardless of the saved enabled flag.
   Settings are stored in `~/.config/codex-monitor/ntfy.json` (mode 0600).
-- `python3 -m unittest -v test_monitor_events` runs the local synthetic tests.
+- `python3 -m unittest -q test_monitor_events test_notification_worker test_verified_outcomes test_session_events test_notification_preferences test_activity_metadata` runs the focused local synthetic tests.
 - `systemctl --user status codex-monitor-tracker.service` checks the service;
   `systemctl --user stop codex-monitor-tracker.service` stops it without stopping Codex.
 
@@ -77,6 +77,50 @@ run independently as an enabled `systemd --user` service on Debian. Notification
 transitions. A process disappearing between polls may be missed if it was never
 observed. The classifier does not equate a Codex turn completing with all tests
 passing. Waiting for approval or detecting stalled work is not implemented yet.
+
+## GNOME activity identification
+
+GNOME displays three lines per process:
+
+```text
+TeikosFSM
+SPEC-018 · Drag interventi
+Exec · 00:58 · PID 2989405
+```
+
+The activity label has a strict source priority:
+
+1. An explicit per-launch environment variable, e.g.:
+
+   ```bash
+   CODEX_MONITOR_ACTIVITY="SPEC-018 · Drag interventi" codex exec "..."
+   ```
+
+   No global Codex configuration is changed. The value is kept short (maximum
+   65 characters) and validated before display or notification.
+2. A precise association with the process's **open Codex session JSONL file**
+   through `/proc/<pid>/fd`. Only that session's user-task text is inspected
+   for a clear `SPEC-NNN` or a heading of the form
+   `SPEC-018 · Drag interventi`. Multiple session files, missing permissions,
+   or ambiguous headings result in no description, not a guessed one.
+3. Without an activity, the second line says `Attività non identificata`.
+   The project, process type, duration and PID remain visible.
+
+Process identity is PID **plus kernel start time**, preventing PID reuse from
+assigning a label to a different process. Two concurrent Codex tasks working on
+the same project are never matched merely by directory name. The same
+session-file association is used for activity metadata in ntfy start, completion
+and error notifications. ntfy receives only the project name and validated short
+label, not prompts, session paths or other task text. When an explicit launch
+label is present, the tracker stores it keyed by session file in a local
+`session-labels.json` file (permissions 0600).
+
+This can identify terminal, ChatGPT-launched or VS Code-launched processes **if**
+their native Codex process and session file are visible to the Debian user.
+Remote/cloud-only sessions and long-lived app-server processes that are excluded
+from process tracking are not covered. A generic task without a reliable
+identifier remains unlabeled. A `SPEC-018` in the prompt without a trustworthy
+title is shown as `SPEC-018`, rather than inventing a description.
 
 ## Verified outcomes for `codex exec`
 
