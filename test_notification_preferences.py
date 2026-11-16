@@ -25,6 +25,7 @@ class NotificationPreferencesTests(unittest.TestCase):
             self.assertEqual(poll(root,state,sender,{"enabled":True}),0)
             with path.open("a") as f:
                 f.write(json.dumps({"type":"event_msg","payload":{"type":"task_started"}})+"\n")
+                f.write(json.dumps({"type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"SPEC-030 · Monitor"}]}})+"\n")
                 f.write(json.dumps({"type":"event_msg","payload":{"type":"turn_aborted"}})+"\n")
             self.assertEqual(poll(root,state,sender,{"enabled":True,"notify_start":True,"notify_complete":False,"notify_error":True}),1)
             self.assertEqual([e["event"] for e in sent],["started"])

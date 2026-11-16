@@ -19,6 +19,7 @@ class SessionLogTests(unittest.TestCase):
             lines=[
               {"type":"session_meta","payload":{"cwd":"/tmp/demo"}},
               {"type":"event_msg","payload":{"type":"task_started"}},
+              {"type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"SPEC-018 · Drag interventi"}]}},
               {"type":"event_msg","payload":{"type":"task_complete"}}]
             path.write_text("".join(json.dumps(item)+"\n" for item in lines))
             self.assertEqual(poll(root,state,sender,cfg),1)

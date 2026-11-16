@@ -64,7 +64,8 @@ def collect(root, positions, labels=None):
                         current_activity = prestart_activity
                         prestart_activity = None
                         in_turn = True
-                        pending_start = {"event": "started", "project": project, "session": path.stem}
+                        pending_start = {"event": "started", "project": project, "session": path.stem,
+                                         "session_file": key, "start_offset": stream.tell()}
                         if current_activity:
                             pending_start["activity"] = current_activity
                         turn_events.append(pending_start)

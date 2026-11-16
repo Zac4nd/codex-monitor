@@ -52,6 +52,13 @@ run independently as an enabled `systemd --user` service on Debian. Notification
 - `ntfy_notifier.py` sends opt-in HTTPS notifications to the configured ntfy topic.
   `session_notifier.py` reads Codex session JSONL for structured `task_started`
   events, including multiple turns within a long-running interactive session.
+  Codex can write `task_started` *before* the user mandate appears in JSONL.
+  To avoid losing the activity (for example `SPEC-030`) from start alerts,
+  the notifier briefly defers an unlabeled start until its own session/turn
+  contains a user task; after 12 seconds it sends a project-only alert instead.
+  Pending starts and JSONL cursors survive service restarts, without replaying
+  older notifications. No previous turn or different project supplies a fallback
+  activity label.
   **No terminal notification is inferred from `task_complete`: it describes a
   turn, not the Codex process lifecycle.** `notification_worker.py` consumes
   process-disappearance events persisted by `execution_tracker.py` and sends
