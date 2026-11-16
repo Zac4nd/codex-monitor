@@ -14,8 +14,8 @@ def prepare(event, config):
     if event.get("event") != "finished":
         return None
     state = event.get("outcome", "unknown")
-    title = {"completed": "Codex: turno completato", "failed": "Codex: turno interrotto/errore",
-             "unknown": "Codex terminato (esito sconosciuto)"}.get(state)
+    title = {"completed": "Codex terminato", "failed": "Codex terminato (errore)",
+             "unknown": "Codex terminato"}.get(state)
     if not title:
         return None
     project = clean_label(event.get("project", "")) or "Progetto"

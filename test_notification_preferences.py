@@ -21,14 +21,13 @@ class NotificationPreferencesTests(unittest.TestCase):
                      *[{"type":"event_msg","payload":{"type":kind}} for kind in ("task_started","task_complete","turn_aborted","task_started")]]
             path.write_text("".join(json.dumps(x)+"\n" for x in records))
             cfg={"enabled":True, "notify_start":False, "notify_complete":True, "notify_error":False}
-            self.assertEqual(poll(root,state,sender,cfg),1)
-            self.assertEqual(sent[0]["outcome"],"completed")
+            self.assertEqual(poll(root,state,sender,cfg),0)
             self.assertEqual(poll(root,state,sender,{"enabled":True}),0)
             with path.open("a") as f:
                 f.write(json.dumps({"type":"event_msg","payload":{"type":"task_started"}})+"\n")
                 f.write(json.dumps({"type":"event_msg","payload":{"type":"turn_aborted"}})+"\n")
-            self.assertEqual(poll(root,state,sender,{"enabled":True,"notify_start":True,"notify_complete":False,"notify_error":True}),2)
-            self.assertEqual([e["event"] for e in sent[1:]],["started","finished"])
+            self.assertEqual(poll(root,state,sender,{"enabled":True,"notify_start":True,"notify_complete":False,"notify_error":True}),1)
+            self.assertEqual([e["event"] for e in sent],["started"])
     def test_start_payload(self):
         self.assertEqual(prepare({"event":"started","project":"Example"}, {})["title"],"Codex: turno avviato")
     def test_persistence_and_defaults(self):

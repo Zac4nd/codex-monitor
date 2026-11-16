@@ -56,12 +56,14 @@ def observe(snapshot=None, now=None, previous=None):
         next_state[key] = {"pid": p["pid"], "project": p["project"], "command": p["command"],
                            "first_seen": old.get("first_seen", now) if old else now,
                            "last_seen": now, "ignored": p.get("ignored", False),
-                           "managed": p.get("managed", False)}
+                           "managed": p.get("managed", False),
+                           "activity": p.get("activity"), "session_file": p.get("session_file")}
     for key, p in previous.items():
         if key not in current:
             events.append({"event": "finished", "outcome": "unknown", "identity": key,
                            "pid": p["pid"], "project": p["project"], "at": now,
-                           "ignored": p.get("ignored", False), "managed": p.get("managed", False)})
+                           "ignored": p.get("ignored", False), "managed": p.get("managed", False),
+                           "activity": p.get("activity"), "session_file": p.get("session_file")})
     return next_state, events
 
 def record_session_labels(snapshot):
@@ -109,7 +111,9 @@ if __name__ == "__main__":
         print(json.dumps(tick(), ensure_ascii=False))
     else:
         from session_notifier import poll
+        from notification_worker import drain
         while True:
             tick()
             poll(Path.home() / '.codex/sessions', DATA / 'session-notification-offsets.json')
+            drain(EVENTS, DATA / "notification-cursor.txt")
             time.sleep(max(0.5, args.interval))

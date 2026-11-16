@@ -37,6 +37,9 @@ def drain(events_path, cursor_path, sender=publish, config=None):
             cursor_path.write_text(str(stream.tell()))
             if event.get("event") != "finished" or event.get("ignored") or event.get("managed"):
                 continue
+            option = "notify_error" if event.get("outcome") == "failed" else "notify_complete"
+            if not config.get(option, True):
+                continue
             try:
                 result = sender(event, config)
                 sent += int(bool(result.get("sent")))

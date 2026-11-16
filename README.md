@@ -49,21 +49,25 @@ run independently as an enabled `systemd --user` service on Debian. Notification
   `error` messages from a **specifically associated** Codex JSON event stream.
   An observed process disappearing remains `unknown` until a trustworthy
   source establishes its outcome. No automatic log-to-PID correlation yet.
-- `ntfy_notifier.py` sends opt-in HTTPS notifications to `https://ntfy.sh`.
-  The live tracker now uses `session_notifier.py` to read **Codex session JSONL**
-  directly, keyed by session file and byte offset, with no speculative PID mapping.
-  Explicit `task_started` means **turn started** (also within an existing CLI session).
-  Explicit `task_complete` means **turn completed**, not guaranteed task/test success;
-  explicit `turn_aborted` or `task_failed` means interrupted/failed if present.
-  Events without a supported terminal marker produce no success/failure claim.
-  Existing logs are skipped on initial activation; offsets are recorded before
-  sending (at-most-once, with possible lost alerts on network failure).
-  The passive process event log is still maintained but no longer sends
-  duplicate unknown-outcome notifications.
+- `ntfy_notifier.py` sends opt-in HTTPS notifications to the configured ntfy topic.
+  `session_notifier.py` reads Codex session JSONL for structured `task_started`
+  events, including multiple turns within a long-running interactive session.
+  **No terminal notification is inferred from `task_complete`: it describes a
+  turn, not the Codex process lifecycle.** `notification_worker.py` consumes
+  process-disappearance events persisted by `execution_tracker.py` and sends
+  **Codex terminato** regardless of whether the task succeeded, failed or
+  lacks a terminal session marker. The short activity label is only context,
+  not a statement that the task is finished. `unknown` outcomes are never
+  described as successful. Explicitly wrapped executions retain their verified
+  exit-code notification and are excluded from the passive duplicate path.
+  Process identity uses PID plus kernel start time, not PID alone. Events are
+  consumed using persisted byte offsets, skipping history on first activation;
+  there is one notification attempt per event (delivery can be lost on network
+  failure). Ignored processes remain excluded from passive exit notifications.
 - `python3 ntfy_settings.py gui` opens the shared notification settings window;
   the GNOME menu and PyQt widget also provide access. CLI commands:
   `python3 ntfy_settings.py show`, `set --topic TOPIC`, `enable`, `disable`, `test`.
-  The GUI offers three independent checkboxes for turn start, completion and
+  The GUI offers three independent checkboxes for turn start, process termination and
   error/interruption, all enabled by default; CLI equivalents are
   `set --notify-start on|off --notify-complete on|off --notify-error on|off`.
   Preferences are read on each polling cycle without a service restart.
@@ -109,8 +113,8 @@ The activity label has a strict source priority:
 Process identity is PID **plus kernel start time**, preventing PID reuse from
 assigning a label to a different process. Two concurrent Codex tasks working on
 the same project are never matched merely by directory name. The same
-session-file association is used for activity metadata in ntfy start, completion
-and error notifications. ntfy receives only the project name and validated short
+session-file association is used for activity metadata in ntfy start and
+process-termination notifications. ntfy receives only the project name and validated short
 label, not prompts, session paths or other task text. When an explicit launch
 label is present, the tracker stores it keyed by session file in a local
 `session-labels.json` file (permissions 0600).

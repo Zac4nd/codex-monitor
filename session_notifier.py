@@ -25,9 +25,9 @@ def poll(root, state_file, sender=publish, config=None):
     state_file.write_text(json.dumps(positions))
     count = 0
     for event in events:
-        category = ("notify_start" if event.get("event") == "started" else
-                    "notify_error" if event.get("outcome") == "failed" else "notify_complete")
-        if not config.get(category, True):
+        # A turn ending is not the Codex CLI process ending. Process lifecycle
+        # notifications come exclusively from notification_worker.
+        if event.get("event") != "started" or not config.get("notify_start", True):
             continue
         try:
             result = sender(event, config)

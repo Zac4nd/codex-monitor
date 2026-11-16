@@ -11,6 +11,7 @@ class TrackerTests(unittest.TestCase):
         self.assertEqual([e["event"] for e in events], ["started"])
         state, events = observe(snapshot=[], previous=state, now="T2")
         self.assertEqual(events[0]["outcome"], "unknown")
+        self.assertEqual(prepare(events[0],{})["title"], "Codex terminato")
     def test_no_duplicate_start(self):
         p = dict(pid=123, identity="123:456", project="AZFlow", command="exec")
         state, _ = observe(snapshot=[p], previous={}, now="T1")
